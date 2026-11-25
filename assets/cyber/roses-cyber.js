@@ -54,10 +54,10 @@
     detail: ['projector', 'voxel', 'joi', 'fade'],
     ambient: ['breathe', 'cement', 'off'],
     burns: ['offbeat', 'frequent', 'off'],
-    edge: ['on', 'off'],
+    edge: ['off', 'on'],
     cursor: ['ghost', 'off'],
     essay: ['signal', 'off'],
-    credits: ['hologram', 'off'],
+    credits: ['off', 'hologram'],
   };
   const LABELS = {
     static: 'Opening static', entry: 'Entry', hiss: 'Entry hiss', rerender: 'Hover re-render',
