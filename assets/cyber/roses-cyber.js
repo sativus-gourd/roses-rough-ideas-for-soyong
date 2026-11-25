@@ -48,7 +48,7 @@
     entry: ['tune', 'fade'],
     hiss: ['on', 'off'],
     rerender: ['on', 'off'],
-    lock: ['voxel', 'tilt', 'off'],
+    lock: ['off', 'voxel', 'tilt'],
     holo: ['music', 'always', 'off'],
     holoStyle: ['mercury', 'duotone', 'joi'],
     detail: ['projector', 'voxel', 'joi', 'fade'],
