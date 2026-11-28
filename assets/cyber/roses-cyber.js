@@ -1907,7 +1907,7 @@ void main(){
         level = t < .55 ? Math.min(1, t / .25) : (1 - t) / .45;
         if (!burst.switched && t > .5) {
           burst.switched = true;
-          const o = treatment(chance(.06) ? pick([3, 7, 9]) : pick([1, 2, 4, 5, 6, 8, 10]));
+          const o = treatment(1 + Math.floor(Math.random() * 10));
           for (const k in o) fx.style.setProperty(k, o[k]);
           fxImg.src = img.currentSrc || img.src;
           fx.classList.add('on');
@@ -1926,7 +1926,7 @@ void main(){
   modules.push(TV);
 
   /* ============================================================== 14. essay: roots in the heading and the text */
-  // The essay heading grows like the opening. In the body, a few words at a time sprout roots, slowly
+  // In the essay body, a few words at a time sprout roots, slowly
   // and at no fixed rhythm, then let go: the text keeps its layout because each grown word is drawn on
   // an overlay above the hidden original.
   const EssayGrow = (() => {
@@ -1937,12 +1937,6 @@ void main(){
       if (!allowed('essayGrow')) return;
       article = article || (R.essay && R.essay.querySelector('.essay-article'));
       if (!article) return;
-      head = head || article.querySelector('h2');
-      if (head && !headCtl) {
-        headCtl = grow(head, { face: 'roses', seed: 202 + Math.floor(rand(0, 60)), climb: 15, seconds: 6.5, colour: '#eaeaea', weight: 'earthy' });
-      } else if (headCtl && typeof headCtl.replay === 'function' && !reduced()) {
-        try { headCtl.replay({ seconds: 5 }); } catch (err) { /* ignore */ }
-      }
       nextAt = performance.now() + rand(1800, 4200);
     }
     function unwrap(span) {

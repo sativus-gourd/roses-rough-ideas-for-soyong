@@ -27,13 +27,13 @@
   };
   const GREEN = { stem: '#3f6b3b', leaf: '#5c8a48', dark: '#2e4f2c' };
   const BOUQUETS = [
-    { wrap: 'kraft', roses: ['blue'], n: 5, ribbon: '#48999f', label: 'Dyed blue roses in kraft paper' },
-    { wrap: 'news', roses: ['white'], n: 5, ribbon: '#343566', label: 'White roses in newspaper' },
+    { wrap: 'kraft', roses: ['blue'], n: 5, ribbon: '#e9393e', label: 'Dyed blue roses in kraft paper' },
+    { wrap: 'news', roses: ['white'], n: 5, ribbon: '#e9393e', label: 'White roses in newspaper' },
     { wrap: 'black', roses: ['violet', 'lavender'], n: 6, ribbon: '#b3ac9e', label: 'Dark violet roses in black paper' },
     { wrap: 'cello', roses: ['lavender'], n: 5, ribbon: '#6c64c8', label: 'Lavender roses in cellophane' },
     { wrap: 'none', roses: ['red'], n: 1, single: true, label: 'A single red rose' },
     { wrap: 'bag', roses: ['ice'], n: 4, label: 'Pale roses in a shop bag' },
-    { wrap: 'kraft', roses: ['lavender'], n: 4, wilted: true, ribbon: '#343566', label: 'Wilting roses in kraft paper' },
+    { wrap: 'kraft', roses: ['lavender'], n: 4, wilted: true, ribbon: '#831c1f', label: 'Wilting roses in kraft paper' },
     { wrap: 'slate', roses: ['white', 'blue'], n: 6, ribbon: '#ebe6d7', label: 'White and blue roses in grey paper' },
   ];
   const WRAP = {
