@@ -390,11 +390,15 @@
        week 6 release, or open the page with ?cyber=off. ?lab opens the variant panel. -->
   <link rel="stylesheet" href="assets/cyber/roses-cyber.css?v=2.4">
   <script src="assets/cyber/roses-pulse.js?v=2.4" defer></script>
-  <script src="assets/cyber/roses-cyber.js?v=2.4" defer></script>
-  <link rel="stylesheet" href="assets/cyber/roses-seoul.css?v=2.4">
-  <script src="assets/cyber/roses-seoul.js?v=2.4" defer></script>
+  <script src="assets/cyber/roses-cyber.js?v=2.5" defer></script>
+  <link rel="stylesheet" href="assets/cyber/roses-seoul.css?v=2.5">
+  <script src="assets/cyber/roses-seoul.js?v=2.5" defer></script>
   <!-- Preview copy: keep it out of search results (the live site is roses.danrelief.com). -->
   <meta name="robots" content="noindex, nofollow">
+  <!-- Lines under the enlarged photograph. Content, not an effect, so they stay with ?cyber=off. -->
+  <link rel="stylesheet" href="assets/cyber/roses-fragments.css?v=2.5">
+  <script src="assets/fragments.js?v=2.5" defer></script>
+  <script src="assets/cyber/roses-fragments.js?v=2.5" defer></script>
 </head>
 <body>
   <div class="intro-shell" id="introShell">
@@ -478,25 +482,22 @@
           <div class="essay-video" id="essayVideo" data-youtube-url="">
             <span class="essay-video-placeholder">VIDEO</span>
           </div>
-          <section class="sg-seoul" id="seoulBoard" aria-labelledby="seoulQuestion">
-            <h3 class="sg-seoul-q" id="seoulQuestion">
-              <span lang="ko">서울이 사람이라면 어떤 사람일 것 같으신가요?</span>
-              <span lang="en">If Seoul were a person, what kind of person would they be?</span>
-            </h3>
+          <section class="sg-seoul" id="seoulBoard" lang="ko" aria-labelledby="seoulQuestion">
+            <h3 class="sg-seoul-q" id="seoulQuestion">서울이 사람이라면 어떤 사람일 것 같으신가요?</h3>
             <form class="sg-seoul-form" id="seoulForm" autocomplete="off">
               <fieldset class="sg-seoul-keys" id="seoulKeys">
-                <legend><span lang="ko">꽃다발</span> / <span lang="en">Bouquet</span></legend>
+                <legend class="sg-seoul-sr">꽃다발</legend>
               </fieldset>
-              <label class="sg-seoul-field"><span class="sg-seoul-sr">Your answer</span>
-                <textarea name="message" maxlength="240" rows="3" placeholder="서울은… / Seoul is…"></textarea>
-              </label>
-              <input class="sg-seoul-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
               <div class="sg-seoul-row">
-                <button type="submit"><span lang="ko">보내기</span> / <span lang="en">Send</span></button>
-                <p class="sg-seoul-status" id="seoulStatus" role="status"></p>
+                <label class="sg-seoul-field"><span class="sg-seoul-sr">답</span>
+                  <textarea name="message" maxlength="240" rows="1" placeholder="서울은…"></textarea>
+                </label>
+                <button type="submit">보내기</button>
               </div>
+              <input class="sg-seoul-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+              <p class="sg-seoul-status" id="seoulStatus" role="status"></p>
             </form>
-            <ol class="sg-seoul-list" id="seoulList" aria-label="Answers"></ol>
+            <ol class="sg-seoul-list" id="seoulList" aria-label="답"></ol>
           </section>
         </div>
         <article class="essay-article">

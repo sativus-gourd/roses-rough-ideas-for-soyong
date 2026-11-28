@@ -27,14 +27,14 @@
   };
   const GREEN = { stem: '#3f6b3b', leaf: '#5c8a48', dark: '#2e4f2c' };
   const BOUQUETS = [
-    { wrap: 'kraft', roses: ['blue'], n: 5, ribbon: '#e9393e', label: 'Dyed blue roses in kraft paper' },
-    { wrap: 'news', roses: ['white'], n: 5, ribbon: '#e9393e', label: 'White roses in newspaper' },
-    { wrap: 'black', roses: ['violet', 'lavender'], n: 6, ribbon: '#b3ac9e', label: 'Dark violet roses in black paper' },
-    { wrap: 'cello', roses: ['lavender'], n: 5, ribbon: '#6c64c8', label: 'Lavender roses in cellophane' },
-    { wrap: 'none', roses: ['red'], n: 1, single: true, label: 'A single red rose' },
-    { wrap: 'bag', roses: ['ice'], n: 4, label: 'Pale roses in a shop bag' },
-    { wrap: 'kraft', roses: ['lavender'], n: 4, wilted: true, ribbon: '#831c1f', label: 'Wilting roses in kraft paper' },
-    { wrap: 'slate', roses: ['white', 'blue'], n: 6, ribbon: '#ebe6d7', label: 'White and blue roses in grey paper' },
+    { wrap: 'kraft', roses: ['blue'], n: 5, ribbon: '#e9393e', label: '크라프트지에 싼 파란 장미' },
+    { wrap: 'news', roses: ['white'], n: 5, ribbon: '#e9393e', label: '신문지에 싼 하얀 장미' },
+    { wrap: 'black', roses: ['violet', 'lavender'], n: 6, ribbon: '#b3ac9e', label: '검은 종이에 싼 짙은 보라 장미' },
+    { wrap: 'cello', roses: ['lavender'], n: 5, ribbon: '#6c64c8', label: '셀로판에 싼 연보라 장미' },
+    { wrap: 'none', roses: ['red'], n: 1, single: true, label: '빨간 장미 한 송이' },
+    { wrap: 'bag', roses: ['ice'], n: 4, label: '쇼핑백에 담긴 옅은 장미' },
+    { wrap: 'kraft', roses: ['lavender'], n: 4, wilted: true, ribbon: '#831c1f', label: '크라프트지에 싼 시든 장미' },
+    { wrap: 'slate', roses: ['white', 'blue'], n: 6, ribbon: '#ebe6d7', label: '회색 종이에 싼 하얗고 파란 장미' },
   ];
   const WRAP = {
     kraft: { base: '#b98a5a', shade: '#8e6640', light: '#d6ab78', mark: '#6e4e30' },
@@ -138,7 +138,6 @@
   BOUQUETS.forEach((b, i) => {
     const label = document.createElement('label');
     label.className = 'sg-seoul-key';
-    label.title = b.label;
     const input = document.createElement('input');
     input.type = 'radio'; input.name = 'bouquet'; input.value = String(i);
     input.setAttribute('aria-label', b.label);
@@ -151,34 +150,29 @@
 
   /* ------------------------------------------------------------ answers */
   let entries = [];
-  const say = (ko, en) => { status.textContent = ''; const a = document.createElement('span'); a.lang = 'ko'; a.textContent = ko; const b = document.createElement('span'); b.lang = 'en'; b.textContent = en; status.append(a, ' ', b); };
+  // The status line is read aloud; only errors are shown on screen. Success shows as the answer arriving.
+  const say = (text, error = false) => { status.textContent = text; status.classList.toggle('is-error', !!error && !!text); };
   const stamp = d => {
     const t = d instanceof Date ? d : new Date(d);
     if (Number.isNaN(t.getTime())) return String(d || '');
     const z = n => String(n).padStart(2, '0');
-    return `${t.getFullYear()}-${z(t.getMonth() + 1)}-${z(t.getDate())} ${z(t.getHours())}:${z(t.getMinutes())}`;
+    return `${z(t.getMonth() + 1)}.${z(t.getDate())} ${z(t.getHours())}:${z(t.getMinutes())}`;
   };
-  function render() {
+  function render(fresh = false) {
     list.textContent = '';
-    if (!entries.length) {
-      const li = document.createElement('li');
-      li.className = 'sg-seoul-empty';
-      li.innerHTML = '<span lang="ko">아직 답이 없어요.</span> <span lang="en">No answers yet.</span>';
-      list.append(li);
-      return;
-    }
-    entries.slice(-100).reverse().forEach(o => {
+    entries.slice(-100).reverse().forEach((o, i) => {
       const li = document.createElement('li');
       const img = document.createElement('img');
       const n = Math.max(0, Math.min(BOUQUETS.length - 1, parseInt(o.bouquet, 10) || 0));
       img.src = SPRITES[n]; img.alt = BOUQUETS[n].label; img.width = W; img.height = H;
-      const body = document.createElement('div');
       const msg = document.createElement('p'); msg.textContent = String(o.message || '');
       const time = document.createElement('time'); time.textContent = stamp(o.date);
-      body.append(msg, time);
-      li.append(img, body);
+      if (!Number.isNaN(new Date(o.date).getTime())) time.dateTime = new Date(o.date).toISOString();
+      li.append(img, msg, time);
+      if (fresh && i === 0) li.className = 'is-new';
       list.append(li);
     });
+    if (fresh) list.scrollTop = 0;
   }
   const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '[]'); } catch (err) { return []; } };
   const writeLocal = a => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(a.slice(-100))); return true; } catch (err) { return false; } };
@@ -186,7 +180,6 @@
   function load() {
     if (!connected) {
       entries = readLocal(); render();
-      say('지금은 이 기기에만 저장돼요.', 'Saved on this device for now.');
       return Promise.resolve(true);
     }
     return new Promise(resolve => {
@@ -194,12 +187,12 @@
       const tag = document.createElement('script');
       let done = false;
       const finish = ok => { if (done) return; done = true; clearTimeout(timer); delete window[cb]; tag.remove(); resolve(ok); };
-      const timer = setTimeout(() => { say('불러오지 못했어요.', "Couldn't load answers."); finish(false); }, 8500);
+      const timer = setTimeout(() => { say('답을 불러오지 못했어요.', true); finish(false); }, 8500);
       window[cb] = payload => {
-        if (payload && payload.ok && Array.isArray(payload.entries)) { entries = payload.entries; render(); say('', ''); finish(true); }
-        else { say('불러오지 못했어요.', "Couldn't load answers."); finish(false); }
+        if (payload && payload.ok && Array.isArray(payload.entries)) { entries = payload.entries; render(); say(''); finish(true); }
+        else { say('답을 불러오지 못했어요.', true); finish(false); }
       };
-      tag.onerror = () => { say('연결이 끊겼어요.', 'Connection lost.'); finish(false); };
+      tag.onerror = () => { say('연결이 끊겼어요.', true); finish(false); };
       tag.src = ENDPOINT + '?action=list&callback=' + encodeURIComponent(cb) + '&t=' + Date.now();
       document.head.append(tag);
     });
@@ -213,32 +206,64 @@
     if (String(f.get('website') || '')) return;
     const message = String(f.get('message') || '').replace(/\s+/g, ' ').trim().slice(0, MAX_LEN);
     const bouquet = parseInt(f.get('bouquet'), 10);
-    if (!message || !(bouquet >= 0)) { say('꽃다발을 고르고 답을 적어 주세요.', 'Pick a bouquet and write an answer.'); textarea.focus(); return; }
-    sending = true; button.disabled = true;
+    if (!message || !(bouquet >= 0)) {
+      say('답을 적어 주세요.');
+      textarea.classList.remove('sg-nudge'); void textarea.offsetWidth; textarea.classList.add('sg-nudge');
+      textarea.focus(); return;
+    }
+    sending = true; button.setAttribute('aria-busy', 'true');
     const entry = { bouquet, message, date: new Date().toISOString() };
     if (!connected) {
       const all = readLocal(); all.push(entry); writeLocal(all);
-      entries = all; render(); form.reset();
+      entries = all; render(true); form.reset(); fit();
       keys.querySelectorAll('input')[bouquet].checked = true;
-      say('이 기기에 저장했어요.', 'Saved on this device.');
-      sending = false; button.disabled = false;
+      say('답을 남겼어요.');
+      sending = false; button.removeAttribute('aria-busy');
       return;
     }
-    say('보내는 중…', 'Sending…');
+    say('보내는 중…');
     try {
       await fetch(ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ action: 'post', bouquet: String(bouquet), message, website: '' }) });
-      entries.push(entry); render(); form.reset();
+      entries.push(entry); render(true); form.reset(); fit();
       keys.querySelectorAll('input')[bouquet].checked = true;
-      say('보냈어요.', 'Sent.');
+      say('답을 남겼어요.');
       setTimeout(() => load(), 1800);
     } catch (err) {
-      say('보내지 못했어요. 다시 해 주세요.', "Couldn't send. Try again.");
+      say('보내지 못했어요. 다시 해 주세요.', true);
     }
-    sending = false; button.disabled = false;
+    sending = false; button.removeAttribute('aria-busy');
   });
+  // One line that grows as it fills. Enter sends, Shift+Enter breaks the line, and Enter while
+  // a Hangul syllable is still composing is left to the input method.
+  const autoGrow = !(window.CSS && CSS.supports && CSS.supports('field-sizing', 'content'));
+  function fit() {
+    if (!autoGrow) return;
+    textarea.style.height = 'auto';
+    textarea.style.height = `${Math.min(98, Math.max(34, textarea.scrollHeight))}px`;
+  }
+  textarea.addEventListener('input', fit);
+  textarea.addEventListener('animationend', () => textarea.classList.remove('sg-nudge'));
   textarea.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); form.requestSubmit(); }
+    if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); form.requestSubmit(); }
   });
+
+  /* ------------------------------------------------------------ the screen itself */
+  const hum = document.createElement('span');
+  hum.className = 'sg-seoul-hum'; hum.setAttribute('aria-hidden', 'true');
+  board.prepend(hum);
+  // The pixel face (46 KB) is fetched once the visitor is inside, not during the opening.
+  const pixel = () => board.classList.add('sg-seoul-pixel');
+  function warm() {
+    if (document.fonts && document.fonts.load) document.fonts.load('12px "Galmuri11 Seoul"', '서울').then(pixel, pixel);
+    else pixel();
+  }
+  const exp = document.getElementById('experience');
+  if (exp && !exp.classList.contains('visible')) {
+    const mo = new MutationObserver(() => {
+      if (exp.classList.contains('visible')) { mo.disconnect(); setTimeout(warm, 1200); }
+    });
+    mo.observe(exp, { attributes: true, attributeFilter: ['class'] });
+  } else warm();
   load();
 })();

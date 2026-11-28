@@ -60,12 +60,13 @@
     credits: ['off', 'hologram'],
     tv: ['on', 'off'],
     essayGrow: ['on', 'off'],
+    frag: ['phosphor', 'teletext', 'off'],
   };
   const LABELS = {
     static: 'Opening static', entry: 'Entry', hiss: 'Entry hiss', rerender: 'Hover re-render',
     lock: 'Hover lock-on', holo: 'Holograms', holoStyle: 'Hologram light', detail: 'Photo open',
     ambient: 'Ambient', burns: 'Signal burns', edge: 'Edge streaks', cursor: 'Cursor',
-    essay: 'Essay', credits: 'Credits', tv: 'Photo as TV', essayGrow: 'Essay roots',
+    essay: 'Essay', credits: 'Credits', tv: 'Photo as TV', essayGrow: 'Essay roots', frag: 'Photo lines',
   };
   const DEFAULTS = Object.fromEntries(Object.entries(VARIANTS).map(([k, v]) => [k, v[0]]));
   const LAB = params.has('lab');
@@ -98,9 +99,9 @@
     return S[key];
   };
   function applyClasses() {
-    for (const c of [...html.classList]) if (/^sg-(detail|ambient|holostyle|credits|essay)-/.test(c)) html.classList.remove(c);
+    for (const c of [...html.classList]) if (/^sg-(detail|ambient|holostyle|credits|essay|frag)-/.test(c)) html.classList.remove(c);
     html.classList.add('sg-cyber', `sg-detail-${variant('detail')}`, `sg-ambient-${S.ambient}`,
-      `sg-holostyle-${S.holoStyle}`, `sg-credits-${S.credits}`, `sg-essay-${S.essay}`);
+      `sg-holostyle-${S.holoStyle}`, `sg-credits-${S.credits}`, `sg-essay-${S.essay}`, `sg-frag-${S.frag}`);
   }
 
   /* ============================================================== the page we observe */
@@ -2077,6 +2078,7 @@ void main(){
       S[key] = value;
       applyClasses();
       save();
+      doc.dispatchEvent(new CustomEvent('sg:variant', { detail: { key, value } }));
       if (panel) panel.querySelectorAll(`[data-k="${key}"]`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === value)));
     }
     function build() {
