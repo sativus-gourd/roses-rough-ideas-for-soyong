@@ -1,4 +1,4 @@
-/*! ROSES cyber layer, reference build for Soyong Kim. Sativus Gourd, November 2026.
+/*! ROSES cyber layer v2 (grunge), reference build for Soyong Kim. Sativus Gourd, November 2026.
  *
  *  Cement and signal. The collage, the roots and the grain are cement: material, slow, earthy.
  *  The static, the holograms, the pixels and the burns are signal. The two trade places with the song:
@@ -50,7 +50,7 @@
     rerender: ['on', 'off'],
     lock: ['off', 'voxel', 'tilt'],
     holo: ['music', 'always', 'off'],
-    holoStyle: ['mercury', 'duotone', 'joi'],
+    holoStyle: ['grunge', 'mercury', 'duotone', 'joi'],
     detail: ['projector', 'voxel', 'joi', 'fade'],
     ambient: ['breathe', 'cement', 'off'],
     burns: ['offbeat', 'frequent', 'off'],
@@ -58,12 +58,14 @@
     cursor: ['ghost', 'off'],
     essay: ['signal', 'off'],
     credits: ['off', 'hologram'],
+    tv: ['on', 'off'],
+    essayGrow: ['on', 'off'],
   };
   const LABELS = {
     static: 'Opening static', entry: 'Entry', hiss: 'Entry hiss', rerender: 'Hover re-render',
     lock: 'Hover lock-on', holo: 'Holograms', holoStyle: 'Hologram light', detail: 'Photo open',
     ambient: 'Ambient', burns: 'Signal burns', edge: 'Edge streaks', cursor: 'Cursor',
-    essay: 'Essay', credits: 'Credits',
+    essay: 'Essay', credits: 'Credits', tv: 'Photo as TV', essayGrow: 'Essay roots',
   };
   const DEFAULTS = Object.fromEntries(Object.entries(VARIANTS).map(([k, v]) => [k, v[0]]));
   const LAB = params.has('lab');
@@ -86,7 +88,7 @@
   const allowed = key => {
     if (S[key] === 'off') return false;
     if (!reduced()) return true;
-    return !['rerender', 'lock', 'holo', 'burns', 'edge', 'cursor', 'hiss'].includes(key);
+    return !['rerender', 'lock', 'holo', 'burns', 'edge', 'cursor', 'hiss', 'tv'].includes(key);
   };
   const variant = key => {
     if (reduced()) {
@@ -1016,21 +1018,33 @@ void main(){
       return layer;
     }
 
-    // Holograms are drawn per pixel when the photographs are same-origin (GitHub Pages, any server):
-    // a luminance ramp from deep teal glass to cyan-pale to white, translucent in the shadows, with a
-    // rim on edges so the silhouette reads over a busy collage. From file:// the canvas cannot be read,
-    // so the fallback tints the image and screen-blends it as pure light.
+    // Holograms are drawn per pixel when the photographs are same-origin (GitHub Pages, any server).
+    // v2 "grunge": the picture is posterised to a few tones with a 4x4 ordered dither, like a 90s anime
+    // monitor, in one of the measured SIKM ramps (Mercury, Sodium, Indigo) or signal red, with the red
+    // channel bleeding left, dirt dropouts and the odd tracking tear. From file:// the canvas cannot be
+    // read, so the fallback tints the image and screen-blends it as pure light.
     let pixelAccess = true;
     const RAMPS = {
-      mercury: [[11, 42, 51], [72, 153, 159], [147, 215, 243], [255, 255, 255]],
-      red: [[10, 8, 7], [131, 28, 31], [233, 57, 62], [255, 214, 214]],
+      mercury: [[8, 13, 13], [55, 78, 87], [75, 106, 118], [152, 189, 206], [255, 255, 255]],
+      sodium: [[105, 51, 63], [138, 76, 99], [189, 120, 121], [224, 151, 109], [253, 170, 2]],
+      indigo: [[5, 11, 47], [54, 54, 103], [138, 100, 104], [170, 117, 104], [252, 129, 0]],
+      signal: [[10, 8, 7], [131, 28, 31], [233, 57, 62], [255, 214, 214]],
+      cyan: [[11, 42, 51], [72, 153, 159], [147, 215, 243], [255, 255, 255]],
     };
+    const GRUNGE_RAMPS = [['mercury', .38], ['sodium', .24], ['indigo', .2], ['signal', .18]];
+    const pickRamp = () => {
+      let r = Math.random();
+      for (const [k, w] of GRUNGE_RAMPS) { if ((r -= w) <= 0) return k; }
+      return 'mercury';
+    };
+    const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16);
     const ramp = (stops, t) => {
       const x = clamp(t, 0, 1) * (stops.length - 1), i = Math.min(stops.length - 2, Math.floor(x)), f = x - i;
       const a = stops[i], b = stops[i + 1];
       return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
     };
-    function drawLayer(cv, img, w, h, style, idx) {
+    const hash = (x, y, k) => { const v = Math.sin(x * 127.1 + y * 311.7 + k * 74.7) * 43758.5453; return v - Math.floor(v); };
+    function drawLayer(cv, img, w, h, style, idx, holo) {
       if (!Number.isFinite(w) || !Number.isFinite(h)) return;
       w = Math.max(3, Math.round(w)); h = Math.max(3, Math.round(h));
       if (cv.width !== w) cv.width = w;
@@ -1046,7 +1060,36 @@ void main(){
         if (data) {
           const d = data.data, L = new Float32Array(w * h);
           for (let i = 0, p = 0; i < w * h; i++, p += 4) L[i] = (.2126 * d[p] + .7152 * d[p + 1] + .0722 * d[p + 2]) / 255;
-          const stops = style === 'duotone' && idx === 0 ? RAMPS.red : RAMPS.mercury;
+          if (style === 'grunge') {
+            const stops = RAMPS[holo.ramp] || RAMPS.mercury;
+            const levels = idx === 2 ? 4 : 3, seed = holo.seed + idx * 13 + holo.dirt;
+            const tear = holo.tear, out = new Uint8ClampedArray(d.length);
+            for (let yy = 0; yy < h; yy++) {
+              // tracking: one band of rows slides sideways while a tear is on
+              const shift = tear && yy >= tear.y0 * h && yy <= tear.y1 * h ? Math.round(tear.dx * w) : 0;
+              for (let xx = 0; xx < w; xx++) {
+                const sx = clamp(xx - shift, 0, w - 1), i = yy * w + sx, o = (yy * w + xx) * 4;
+                const gx = (sx < w - 1 ? L[i + 1] : L[i]) - (sx > 0 ? L[i - 1] : L[i]);
+                const gy = (yy < h - 1 ? L[i + w] : L[i]) - (yy > 0 ? L[i - w] : L[i]);
+                const rim = clamp(Math.hypot(gx, gy) * 2.4, 0, 1);
+                const l = clamp(Math.pow(L[i], .85) * .9 + rim * .22, 0, 1);
+                const q = clamp(Math.floor(l * (levels - 1) + BAYER[(yy & 3) * 4 + (xx & 3)]), 0, levels - 1) / (levels - 1);
+                const c = ramp(stops, q);
+                // red bleeds one pixel to the left, the site's misregistration direction
+                const qr = xx < w - 1 ? clamp(Math.floor(clamp(Math.pow(L[yy * w + clamp(sx + 1, 0, w - 1)], .85) * .9, 0, 1) * (levels - 1) + BAYER[(yy & 3) * 4 + ((xx + 1) & 3)]), 0, levels - 1) / (levels - 1) : q;
+                out[o] = ramp(stops, qr)[0] * .55 + c[0] * .45;
+                out[o + 1] = c[1]; out[o + 2] = c[2];
+                let a = q === 0 ? .1 : .3 + .62 * q;
+                if (hash(xx, yy, seed) < (idx === 2 ? .045 : .08)) a *= .15; // dirt
+                if ((yy % 3) === 2) a *= .55; // baked scanline
+                out[o + 3] = a * 255;
+              }
+            }
+            data.data.set(out);
+            x.putImageData(data, 0, 0);
+            return;
+          }
+          const stops = style === 'duotone' && idx === 0 ? RAMPS.signal : RAMPS.cyan;
           for (let yy = 0; yy < h; yy++) {
             for (let xx = 0; xx < w; xx++) {
               const i = yy * w + xx, p = i * 4;
@@ -1085,9 +1128,10 @@ void main(){
     function redraw(h, block) {
       h.block = block;
       const style = S.holoStyle;
-      const sizes = [block * 2.6, block * 1.6, block];
-      h.canvases.forEach((cv, i) => drawLayer(cv, h.img, h.w / sizes[i], h.h / sizes[i], style, i));
+      const sizes = style === 'grunge' ? [block * 2.2, block * 1.5, block] : [block * 2.6, block * 1.6, block];
+      h.canvases.forEach((cv, i) => drawLayer(cv, h.img, h.w / sizes[i], h.h / sizes[i], style, i, h));
       h.el.classList.toggle('additive', !pixelAccess);
+      h.el.classList.toggle('grunge', style === 'grunge');
     }
 
     function candidates() {
@@ -1131,8 +1175,10 @@ void main(){
       const canvases = [0, 1, 2].map(i => make('canvas', 'l' + i, tilt));
       make('div', 'sg-holo-scan', tilt);
       const holo = { el, tilt, canvases, img, src: tile.dataset.source, tile, w, h, cx, cy, cam0: camera,
-        depth: rand(1.12, 1.48), born: performance.now(), life: rand(9000, 15000), state: 'in',
-        phase: rand(0, 6.28), block: 26, locked: false, lockSince: 0, outAt: 0, rx: 0, ry: 0, forced: force };
+        depth: rand(1.12, 1.48), born: performance.now(), life: chance(.3) ? rand(3500, 6500) : rand(8000, 17000), state: 'in',
+        phase: rand(0, 6.28), block: 26, locked: false, lockSince: 0, outAt: 0, rx: 0, ry: 0, forced: force,
+        ramp: pickRamp(), seed: Math.floor(rand(0, 999)), dirt: 0, tear: null,
+        glitch: null, nextGlitchAt: performance.now() + rand(900, 4200) };
       redraw(holo, 26);
       list.push(holo);
       // the beam that climbs out of the photograph
@@ -1180,7 +1226,11 @@ void main(){
       if (live.length > want && cullable.length) despawn(cullable.sort((a, b) => a.born - b.born)[0]);
       if (live.length < want && now >= nextSpawnAt) {
         nextSpawnAt = now + 1e9; // until the off-beat fires
-        later(untilOffbeat(), () => { spawn(); nextSpawnAt = performance.now() + rand(1600, 3200); });
+        later(untilOffbeat(), () => {
+          spawn();
+          if (chance(.22)) later(rand(140, 520), () => spawn());
+          nextSpawnAt = performance.now() + (chance(.25) ? rand(5000, 11000) : rand(700, 3800));
+        });
       }
       const target = canHover ? holoUnderPointer() : null;
       for (let i = list.length - 1; i >= 0; i--) {
@@ -1198,6 +1248,19 @@ void main(){
         if (!isTarget) h.lockSince = 0;
         h.locked = isTarget && now - h.lockSince > 160;
         // resolution: materialise, breathe with the song, sharpen when locked, dissolve when leaving
+        // irregular glitches: a dropout, a tracking tear, a sideways jump, or a moment in another ramp
+        if (h.state === 'live' && !h.locked && !h.glitch && now >= h.nextGlitchAt && S.holoStyle === 'grunge') {
+          const kind = pick(['drop', 'drop', 'tear', 'tear', 'jump', 'ramp']);
+          h.glitch = { kind, until: now + (kind === 'tear' ? rand(120, 380) : kind === 'ramp' ? rand(90, 260) : rand(40, 170)), dx: rand(-9, 9) };
+          if (kind === 'tear') { const y0 = rand(0, .8); h.tear = { y0, y1: y0 + rand(.08, .3), dx: rand(-.14, .14) }; h.block = -1; }
+          if (kind === 'ramp') { h.rampWas = h.ramp; h.ramp = pick(Object.keys(RAMPS).filter(k => k !== h.ramp && k !== 'cyan')); h.block = -1; }
+          h.nextGlitchAt = now + (chance(.3) ? rand(150, 700) : -Math.log(1 - Math.random()) * 2600 + 400);
+        }
+        if (h.glitch && now > h.glitch.until) {
+          if (h.glitch.kind === 'tear') { h.tear = null; h.block = -1; }
+          if (h.glitch.kind === 'ramp') { h.ramp = h.rampWas || h.ramp; h.block = -1; }
+          h.dirt++; h.glitch = null;
+        }
         let block;
         if (h.state === 'in') block = [26, 14, 8, 5][clamp(Math.floor(age / 110), 0, 3)];
         else if (h.state === 'out') block = [7, 12, 20, 30][clamp(Math.floor((now - h.outAt) / 90), 0, 3)];
@@ -1216,12 +1279,14 @@ void main(){
         if (h.state === 'in') op *= age < 60 ? 1.4 : (age % 120 < 30 ? .45 : 1);
         if (h.state === 'out') op *= 1 - clamp((now - h.outAt) / 360, 0, 1);
         if (h.state === 'live' && Math.sin(now / 97 + h.phase * 9) > .985) op *= .35;
+        if (h.glitch && h.glitch.kind === 'drop') op *= .12;
         if (paused) op *= 0;
         let sy = 1;
         if (h.state === 'in') sy = clamp(outCubic(age / 260), .02, 1);
         if (h.state === 'out') sy = clamp(1 - outCubic((now - h.outAt - 160) / 200), .02, 1);
         const scale = h.locked ? 1.06 : 1;
-        h.el.style.transform = `translate3d(${(h.sx - h.w / 2).toFixed(1)}px,${(h.sy - h.h / 2).toFixed(1)}px,0) scale(${scale},${(scale * sy).toFixed(3)})`;
+        const jump = h.glitch && h.glitch.kind === 'jump' ? h.glitch.dx : 0;
+        h.el.style.transform = `translate3d(${(h.sx - h.w / 2 + jump).toFixed(1)}px,${(h.sy - h.h / 2).toFixed(1)}px,0) scale(${scale},${(scale * sy).toFixed(3)})`;
         h.el.style.opacity = clamp(op, 0, 1).toFixed(3);
         h.tilt.style.transform = `rotateX(${h.rx.toFixed(2)}deg) rotateY(${h.ry.toFixed(2)}deg)`;
         if (h.state === 'out' && now - h.outAt > 380) { h.el.remove(); list.splice(i, 1); }
@@ -1249,7 +1314,7 @@ void main(){
   /* ============================================================== 6. ambient register */
   // Grain (cement) and scanlines plus a slow rolling hum bar (signal). Their balance follows the song.
   const Ambient = (() => {
-    let built = false, tick = 0;
+    let built = false, tick = 0, hum = null, nextHum = 0;
     function noiseUrl(size, fn) {
       const c = doc.createElement('canvas');
       c.width = size; c.height = size;
@@ -1285,12 +1350,20 @@ void main(){
       html.style.setProperty('--sg-streak-url', `url("${streak}")`);
       const host = R.exp;
       const add = cls => { const e = make('div', 'sg-amb ' + cls); e.setAttribute('aria-hidden', 'true'); host.appendChild(e); return e; };
-      add('sg-grain'); add('sg-scan'); add('sg-hum');
+      add('sg-grain'); add('sg-scan'); hum = add('sg-hum');
     }
     function update(now) {
       if (!built) build();
       if (++tick % 6) return; // ten times a second is plenty for a register that breathes over seconds
       const sig = st.entered ? music.signal : 0;
+      // the rolling bar: one faint pass now and then, only in the louder passages
+      if (hum && st.entered && !reduced()) {
+        if (!nextHum) nextHum = now + rand(14000, 30000);
+        if (now > nextHum && sig > .3) {
+          hum.classList.remove('pass'); void hum.offsetWidth; hum.classList.add('pass');
+          nextHum = now + rand(28000, 70000);
+        }
+      }
       R.exp.style.setProperty('--sg-signal', sig.toFixed(3));
       R.exp.style.setProperty('--sg-cement', (1 - sig).toFixed(3));
     }
@@ -1416,12 +1489,12 @@ void main(){
     }
     function choose() {
       const s = music.signal;
-      if (s < .35) return chance(.5) ? 'scan' : 'tiles';
+      if (s < .35) return chance(.15) ? 'scan' : 'tiles';
       const roll = Math.random();
-      if (roll < .3) return 'band';
-      if (roll < .42) return 'hot';
-      if (roll < .62) return 'vhold';
-      if (roll < .8) return 'tiles';
+      if (roll < .32) return 'band';
+      if (roll < .46) return 'hot';
+      if (roll < .68) return 'vhold';
+      if (roll < .94) return 'tiles';
       return 'scan';
     }
 
@@ -1527,7 +1600,12 @@ void main(){
       if (img.complete && img.naturalWidth) go(); else img.addEventListener('load', go, { once: true });
     }
     function onClose() { token++; if (pxCv) pxCv.classList.remove('on'); }
-    return { name: 'detail', onOpen, onClose, update() {} };
+    function replay() {
+      if (!R.detailFrame) return;
+      R.detailFrame.style.animation = 'none'; void R.detailFrame.offsetWidth; R.detailFrame.style.animation = '';
+      onOpen();
+    }
+    return { name: 'detail', onOpen, onClose, replay, update() {} };
   })();
 
   /* ============================================================== 10. cursor ghosts */
@@ -1707,6 +1785,234 @@ void main(){
   })();
   modules.push(Rose);
 
+  /* ============================================================== 13. the photograph as a television */
+  // An open photograph is a set left on. Static breaks over it every few seconds, at random. Leave it
+  // alone long enough and one burst does not clear: the picture comes back as one of Soyong's colour
+  // treatments. Clicking the picture then is hitting the set: it jolts, the projector transition
+  // runs again and the untreated photograph steadies. A click on a clean picture still closes it.
+  const TV = (() => {
+    let wrap = null, fx = null, fxImg = null, cv = null, ctx = null, img = null;
+    let open = false, state = 'clean', idleSince = 0, decayAfter = 0, nextBurstAt = 0;
+    let burst = null, lastDraw = 0, jitterOn = false;
+    const cache = {};
+    function treatment(n) {
+      // Read Soyong's treatment n from her own stylesheet through a hidden stand-in tile.
+      if (cache[n]) return cache[n];
+      const t = make('div', 'tile photo', doc.body);
+      t.dataset.filter = String(n);
+      t.setAttribute('aria-hidden', 'true');
+      t.style.cssText = 'position:fixed;left:-9999px;top:0;width:8px;height:8px;visibility:hidden;pointer-events:none';
+      const l = make('div', 'photo-filter-layer', t);
+      const cs = getComputedStyle(t), b = getComputedStyle(l, '::before'), a = getComputedStyle(l, '::after');
+      const o = {
+        '--tv-filter': cs.getPropertyValue('--fx-filter').trim() || 'none',
+        '--tv-bimg': b.backgroundImage, '--tv-bsize': b.backgroundSize, '--tv-brepeat': b.backgroundRepeat,
+        '--tv-bblend': b.backgroundBlendMode, '--tv-b1': b.mixBlendMode, '--tv-bop': b.opacity,
+        '--tv-acol': a.backgroundColor, '--tv-b2': a.mixBlendMode, '--tv-aop': a.opacity,
+      };
+      t.remove();
+      return (cache[n] = o);
+    }
+    function build() {
+      if (wrap || !R.detailFrame) return;
+      wrap = make('div', 'sg-tv', R.detailFrame);
+      wrap.setAttribute('aria-hidden', 'true');
+      fx = make('div', 'sg-tv-fx', wrap);
+      fxImg = make('img', '', fx); fxImg.alt = '';
+      cv = make('canvas', 'sg-tv-static', wrap);
+      ctx = cv.getContext('2d');
+      img = R.detailImg;
+      R.detailFrame.addEventListener('click', e => {
+        if (!open || reduced() || !allowed('tv')) return;
+        if (state === 'degraded' || burst) { e.stopPropagation(); hit(); }
+      });
+    }
+    function schedule(now, first) {
+      nextBurstAt = now + (state === 'clean' ? (first ? rand(2400, 4600) : rand(1800, 5600)) : rand(3500, 9000));
+    }
+    function onOpen() {
+      if (!allowed('tv')) return;
+      build();
+      open = true; state = 'clean'; burst = null;
+      fx.classList.remove('on');
+      const now = performance.now();
+      idleSince = now; decayAfter = rand(7500, 12500); schedule(now, true);
+    }
+    function onClose() {
+      open = false; burst = null;
+      if (!wrap) return;
+      fx.classList.remove('on'); cv.style.opacity = '0';
+      if (img) img.style.transform = '';
+      R.detailFrame.classList.remove('sg-thump');
+    }
+    function startBurst(now, kind) {
+      const dur = kind === 'take' ? 1150 : kind === 'hit' ? 300 : rand(110, 420) * (state === 'degraded' ? .8 : 1);
+      burst = { kind, t0: now, dur, level: kind === 'burst' ? rand(.35, .75) : 1, switched: false };
+      const w = Math.max(64, Math.round((R.detailFrame.offsetWidth || 600) / 3));
+      const h = Math.max(48, Math.round((R.detailFrame.offsetHeight || 400) / 3));
+      if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    }
+    function hit() {
+      const now = performance.now();
+      R.detailFrame.classList.remove('sg-thump'); void R.detailFrame.offsetWidth; R.detailFrame.classList.add('sg-thump');
+      later(320, () => R.detailFrame && R.detailFrame.classList.remove('sg-thump'));
+      startBurst(now, 'hit');
+      later(130, () => {
+        if (!open) return;
+        fx.classList.remove('on');
+        state = 'clean';
+        Detail.replay();
+      });
+      idleSince = now; decayAfter = rand(7500, 12500); schedule(now + 300, false);
+    }
+    function drawStatic(level, roll) {
+      const w = cv.width, h = cv.height, im = ctx.createImageData(w, h), d = im.data;
+      const tearRow = Math.random() < .7 ? Math.floor(Math.random() * h) : -1;
+      for (let y = 0; y < h; y++) {
+        const bar = Math.abs(((y / h) - roll + 1) % 1 - .5) < .08 ? 1.5 : 1;
+        const lineGain = .65 + Math.random() * .55;
+        const tear = Math.abs(y - tearRow) < 3;
+        for (let x = 0; x < w; x++) {
+          const p = (y * w + x) * 4;
+          let n = Math.pow(Math.random(), 1.6) * 255 * lineGain * bar;
+          if (tear) n = n * .4 + 150;
+          d[p] = n * .94; d[p + 1] = n * .98; d[p + 2] = n; d[p + 3] = 255 * clamp(level * (.75 + Math.random() * .25), 0, 1);
+        }
+      }
+      ctx.putImageData(im, 0, 0);
+    }
+    function update(now) {
+      if (!open || !wrap) return;
+      if (reduced() || !allowed('tv')) { cv.style.opacity = '0'; return; }
+      if (!burst && now >= nextBurstAt) {
+        if (state === 'clean' && now - idleSince > decayAfter) startBurst(now, 'take');
+        else startBurst(now, 'burst');
+        schedule(now + (burst ? burst.dur : 0), false);
+      }
+      if (!burst) {
+        if (jitterOn) { img.style.transform = ''; jitterOn = false; }
+        cv.style.opacity = '0';
+        return;
+      }
+      const t = (now - burst.t0) / burst.dur;
+      if (t >= 1) {
+        burst = null; cv.style.opacity = '0'; img.style.transform = ''; jitterOn = false;
+        return;
+      }
+      // envelope: fast attack, a flicker, a ragged release
+      let level = burst.level * (t < .12 ? t / .12 : t > .7 ? (1 - t) / .3 : 1) * (Math.random() < .15 ? .55 : 1);
+      if (burst.kind === 'take') {
+        level = t < .55 ? Math.min(1, t / .25) : (1 - t) / .45;
+        if (!burst.switched && t > .5) {
+          burst.switched = true;
+          const o = treatment(1 + Math.floor(Math.random() * 10));
+          for (const k in o) fx.style.setProperty(k, o[k]);
+          fxImg.src = img.currentSrc || img.src;
+          fx.classList.add('on');
+          state = 'degraded';
+        }
+      }
+      if (now - lastDraw > 33) { lastDraw = now; drawStatic(level, (now / 900) % 1); }
+      cv.style.opacity = '1';
+      const j = level * 6;
+      img.style.transform = `translate3d(${(Math.random() * 2 - 1) * j}px,0,0)`;
+      fx.style.transform = img.style.transform;
+      jitterOn = true;
+    }
+    return { name: 'tv', update, onOpen, onClose };
+  })();
+  modules.push(TV);
+
+  /* ============================================================== 14. essay: roots in the heading and the text */
+  // The essay heading grows like the opening. In the body, a few words at a time sprout roots, slowly
+  // and at no fixed rhythm, then let go: the text keeps its layout because each grown word is drawn on
+  // an overlay above the hidden original.
+  const EssayGrow = (() => {
+    let article = null, head = null, headCtl = null, live = [], nextAt = 0;
+    const engine = () => (window.SGRhizoma && typeof window.SGRhizoma.grow === 'function' ? window.SGRhizoma : null);
+    function grow(el, opts) { try { return engine() ? engine().grow(el, opts) : null; } catch (err) { return null; } }
+    function onOpen() {
+      if (!allowed('essayGrow')) return;
+      article = article || (R.essay && R.essay.querySelector('.essay-article'));
+      if (!article) return;
+      head = head || article.querySelector('h2');
+      if (head && !headCtl) {
+        headCtl = grow(head, { face: 'roses', seed: 202 + Math.floor(rand(0, 60)), climb: 15, seconds: 6.5, colour: '#eaeaea', weight: 'earthy' });
+      } else if (headCtl && typeof headCtl.replay === 'function' && !reduced()) {
+        try { headCtl.replay({ seconds: 5 }); } catch (err) { /* ignore */ }
+      }
+      nextAt = performance.now() + rand(1800, 4200);
+    }
+    function unwrap(span) {
+      const p = span.parentNode;
+      if (!p) return;
+      p.replaceChild(doc.createTextNode(span.textContent), span);
+      p.normalize();
+    }
+    function pickWord() {
+      const scroll = R.essay.querySelector('.essay-scroll') || R.essay;
+      const vr = scroll.getBoundingClientRect();
+      const ps = [...article.querySelectorAll('p')].filter(p => { const r = p.getBoundingClientRect(); return r.bottom > vr.top + 60 && r.top < vr.bottom - 60; });
+      for (let k = 0; k < 14 && ps.length; k++) {
+        const p = pick(ps);
+        const walker = doc.createTreeWalker(p, NodeFilter.SHOW_TEXT), nodes = [];
+        while (walker.nextNode()) if (!walker.currentNode.parentElement.closest('.sg-grow-word')) nodes.push(walker.currentNode);
+        const n = pick(nodes);
+        if (!n) continue;
+        const words = [...n.data.matchAll(/[A-Za-zÀ-ɏ가-힣]{4,}/g)];
+        const m = pick(words);
+        if (!m) continue;
+        const range = doc.createRange();
+        range.setStart(n, m.index); range.setEnd(n, m.index + m[0].length);
+        const rects = range.getClientRects();
+        if (rects.length !== 1) continue;
+        const r = rects[0];
+        if (r.top < vr.top + 40 || r.bottom > vr.bottom - 40) continue;
+        if (live.some(it => Math.abs(it.r.top - r.top) < 30 && Math.abs(it.r.left - r.left) < 160)) continue;
+        const span = doc.createElement('span');
+        span.className = 'sg-grow-word';
+        range.surroundContents(span);
+        return { span, r };
+      }
+      return null;
+    }
+    function sprout() {
+      const got = pickWord();
+      if (!got) return;
+      const { span } = got;
+      const ar = article.getBoundingClientRect(), r = span.getBoundingClientRect(), cs = getComputedStyle(span);
+      const ov = make('div', 'sg-grow-over', article);
+      ov.setAttribute('aria-hidden', 'true');
+      ov.textContent = span.textContent;
+      Object.assign(ov.style, { left: (r.left - ar.left) + 'px', top: (r.top - ar.top) + 'px', width: Math.ceil(r.width) + 'px',
+        height: Math.ceil(r.height) + 'px', fontSize: cs.fontSize, lineHeight: r.height + 'px', letterSpacing: cs.letterSpacing });
+      const ctl = grow(ov, { face: 'roses', seed: Math.floor(rand(1, 9999)), climb: Math.round(rand(5, 12)),
+        seconds: rand(9, 24), colour: '#eaeaea', weight: chance(.5) ? 'fine' : 'earthy' });
+      if (!ctl) { ov.remove(); unwrap(span); return; }
+      span.classList.add('is-grown');
+      live.push({ span, ov, ctl, r: got.r, until: performance.now() + rand(12000, 34000) });
+    }
+    function wither(item, fast) {
+      live = live.filter(x => x !== item);
+      const done = () => { try { item.ctl.remove && item.ctl.remove(); } catch (err) { /* ignore */ } item.ov.remove(); unwrap(item.span); };
+      if (fast || typeof item.ctl.release !== 'function') { done(); return; }
+      Promise.race([Promise.resolve(item.ctl.release({ seconds: rand(1.6, 3.2) })), new Promise(r => setTimeout(r, 3600))])
+        .catch(() => {}).then(done);
+    }
+    function update(now) {
+      if (!article) return;
+      if (!st.essay || !allowed('essayGrow')) { if (live.length) live.slice().forEach(it => wither(it, true)); return; }
+      if (reduced()) return;
+      if (now > nextAt && live.length < 3 && engine()) {
+        sprout();
+        nextAt = now + (chance(.2) ? rand(9000, 16000) : rand(2600, 8000));
+      }
+      for (const it of live.slice()) if (now > it.until) wither(it, false);
+    }
+    return { name: 'essayGrow', update, onOpen };
+  })();
+  modules.push(EssayGrow);
+
   /* ============================================================== observers: what Soyong's page is doing */
   const watch = (node, fn, opts = { attributes: true, attributeFilter: ['class', 'hidden'], attributeOldValue: true }) => {
     if (!node) return;
@@ -1727,8 +2033,11 @@ void main(){
   watch(R.detail, rec => {
     if (rec.attributeName !== 'class') return;
     const open = R.detail.classList.contains('is-open'), was = had(rec, 'is-open');
-    if (open && !was) { Lock.unlock(true); Detail.onOpen(); }
-    if (!open && was) Detail.onClose();
+    if (open && !was) { Lock.unlock(true); Detail.onOpen(); TV.onOpen(); }
+    if (!open && was) { Detail.onClose(); TV.onClose(); }
+  });
+  watch(R.essay, rec => {
+    if (rec.attributeName === 'class' && R.essay.classList.contains('is-open') && !had(rec, 'is-open')) EssayGrow.onOpen();
   });
   watch(R.credits, rec => {
     if (rec.attributeName === 'class' && R.credits.classList.contains('is-open') && !had(rec, 'is-open')) Rose.onOpen();

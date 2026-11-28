@@ -1,3 +1,3 @@
-# Roses, rough ideas for Soyong
+# Roses, rough ideas for Soyong (v2)
 
-Rough ideas for the Roses site, built on top of your week 6 release. Your code is untouched: everything lives in `assets/cyber` plus three tags at the end of the head, so take what's useful and rebuild it your way. Add `?lab` to the link to try the variants of each effect, or `?cyber=off` to see your original.
+A grungier second pass on top of your week 6 release: dithered holograms, photos that drift into static until you knock them back, roots in the essay, and a question board under the video. Everything new lives in `assets/cyber` with small edits in `index.html`, and `seoul-answers.gs` connects the board to a Google Sheet. Add `?lab` to the link to try the variants, or `?cyber=off` to see the page without the effects.

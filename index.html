@@ -359,13 +359,15 @@
       max-height:100px;height:auto;object-fit:contain;
       margin:clamp(35px,6vh,70px) auto 0;pointer-events:none }
     .credits-collab { margin-top:30px!important;font-size:clamp(11px,1vw,13px) }
+    .credits-story { margin-top:30px!important;font-size:clamp(11px,1vw,13px) }
+    .credits-story + .credits-collab { margin-top:2px!important }
     .asset-warning { position:absolute;z-index:8;left:50%;top:50%;transform:translate(-50%,-50%);
       max-width:min(88vw,510px);padding:18px 22px;text-align:center;
       font-size:12px;line-height:1.9;color:#555;background:#fff;border:1px solid #eee }
     .asset-warning code { font-family:monospace;color:#222 }
 
     @media (max-width:760px) {
-      .entry-title { font-size:clamp(34px,9.6vw,62px) }
+      .entry-title { font-size:clamp(46px,14vw,80px) }
       .social-links { gap:7px;bottom:calc(clamp(18px,3vw,40px) - 11px) }
       .social-link { width:36px;height:34px }
       .more-button { width:36px;min-width:36px;height:34px }
@@ -389,6 +391,8 @@
   <link rel="stylesheet" href="assets/cyber/roses-cyber.css">
   <script src="assets/cyber/roses-pulse.js" defer></script>
   <script src="assets/cyber/roses-cyber.js" defer></script>
+  <link rel="stylesheet" href="assets/cyber/roses-seoul.css">
+  <script src="assets/cyber/roses-seoul.js" defer></script>
   <!-- Preview copy: keep it out of search results (the live site is roses.danrelief.com). -->
   <meta name="robots" content="noindex, nofollow">
 </head>
@@ -451,6 +455,7 @@
       <img class="credits-rose" src="assets/images/Frame-119.jpeg" alt="Red roses" decoding="async">
       <p class="credits-copyright">© 2026 Dan Relief. All rights reserved.</p>
       <img class="credits-signature" src="credit/sign1.png" alt="Sativus Gourd Atelier signature" decoding="async">
+      <p class="credits-story">A story by Sativus Gourd.</p>
       <p class="credits-collab">In collaboration with Soyong Kim.</p>
     </div>
   </section>
@@ -473,6 +478,26 @@
           <div class="essay-video" id="essayVideo" data-youtube-url="">
             <span class="essay-video-placeholder">VIDEO</span>
           </div>
+          <section class="sg-seoul" id="seoulBoard" aria-labelledby="seoulQuestion">
+            <h3 class="sg-seoul-q" id="seoulQuestion">
+              <span lang="ko">서울이 사람이라면 어떤 사람일 것 같으신가요?</span>
+              <span lang="en">If Seoul were a person, what kind of person would they be?</span>
+            </h3>
+            <form class="sg-seoul-form" id="seoulForm" autocomplete="off">
+              <fieldset class="sg-seoul-keys" id="seoulKeys">
+                <legend><span lang="ko">꽃다발</span> / <span lang="en">Bouquet</span></legend>
+              </fieldset>
+              <label class="sg-seoul-field"><span class="sg-seoul-sr">Your answer</span>
+                <textarea name="message" maxlength="240" rows="3" placeholder="서울은… / Seoul is…"></textarea>
+              </label>
+              <input class="sg-seoul-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+              <div class="sg-seoul-row">
+                <button type="submit"><span lang="ko">보내기</span> / <span lang="en">Send</span></button>
+                <p class="sg-seoul-status" id="seoulStatus" role="status"></p>
+              </div>
+            </form>
+            <ol class="sg-seoul-list" id="seoulList" aria-label="Answers"></ol>
+          </section>
         </div>
         <article class="essay-article">
           <h2>ROSES</h2>
@@ -652,7 +677,7 @@
     // The shared wheel handler below progressively reveals or conceals the
     // essay. Once fully shown, wheel input reads the text normally.
     essayScroll.addEventListener('touchstart',e=>{
-      essayTouchStart=e.touches.length===1
+      essayTouchStart=e.touches.length===1 && !e.target?.closest?.('.sg-seoul-list,.sg-seoul textarea')
         ? {y:e.touches[0].clientY,atTop:essayScroll.scrollTop<=2} : null;
     },{passive:true});
     essayScroll.addEventListener('touchend',e=>{
@@ -860,7 +885,7 @@
       rhizomaStarted=true;
       try {
         rhizoma=window.SGRhizoma.grow(title, {
-          face:'roses',seed:202,field:true,fixed:true,size:.36,
+          face:'roses',seed:202,field:true,fixed:true,size:innerWidth<=760?.56:.36,
           climb:20,seconds:58,colour:'#ffffff',weight:'earthy',
           dpr:innerWidth<=760?1:Math.min(1.5,devicePixelRatio||1)
         });
@@ -1725,6 +1750,7 @@
     window.addEventListener('wheel',e=>{
       if(!entered || photoDetailOpen || creditsOpen)return;
       if(!experience.contains(e.target) && !essayOverlay.contains(e.target))return;
+      if(e.target?.closest?.('.sg-seoul-list,.sg-seoul textarea'))return;
       const scale=e.deltaMode===1 ? 16 : e.deltaMode===2 ? innerHeight : 1;
       const delta=e.deltaY*scale;
       if(!delta)return;

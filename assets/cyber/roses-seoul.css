@@ -1,0 +1,66 @@
+/* ROSES: "If Seoul were a person" answer board. A small terminal in a 90s anime room:
+   phosphor cyan on void, lit keys, scanlines and grain, red misregistered one way to the left. */
+.sg-seoul { position:relative; margin-top:clamp(22px,4vh,40px); padding:18px 18px 14px;
+  background:#0a0807; color:#e9e6df; border:1px solid rgba(72,153,159,.5);
+  box-shadow:0 0 0 1px #000,0 0 28px rgba(72,153,159,.1),inset 0 0 40px rgba(0,0,0,.65);
+  font:12px/1.55 ui-monospace,'SFMono-Regular',Menlo,Consolas,'Courier New',monospace;
+  isolation:isolate; overflow:hidden }
+.sg-seoul::before { content:""; position:absolute; inset:0; z-index:-1; pointer-events:none;
+  background:var(--sg-grain-url,none); background-size:256px 256px; opacity:.16; mix-blend-mode:screen }
+.sg-seoul::after { content:""; position:absolute; inset:0; z-index:3; pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.28) 2px 3px) }
+.sg-seoul-q { margin:4px 0 18px; display:flex; flex-direction:column; gap:10px; text-align:center;
+  color:#93d7f3; font-weight:700; filter:blur(.35px);
+  text-shadow:-1.5px 0 rgba(233,57,62,.55),0 0 8px rgba(147,215,243,.55),0 0 22px rgba(72,153,159,.45);
+  animation:sg-seoul-flicker 7.3s steps(1) infinite }
+.sg-seoul-q [lang="ko"] { font:700 clamp(15px,1.25vw,18px)/1.35 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
+  letter-spacing:-.02em }
+.sg-seoul-q [lang="en"] { font:700 clamp(12px,1vw,14px)/1.35 'Gill Sans','Trebuchet MS',Arial,sans-serif;
+  font-variant:small-caps; letter-spacing:.03em; font-size:clamp(14px,1.2vw,17px) }
+@keyframes sg-seoul-flicker { 0%,100% { opacity:1 } 47% { opacity:.82 } 48% { opacity:1 } 81% { opacity:.9 } 82% { opacity:.55 } 83% { opacity:1 } }
+.sg-seoul-form { position:relative; z-index:1; margin:0 }
+.sg-seoul-keys { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:6px; margin:0 0 10px; padding:0; border:0;
+  min-inline-size:0 }
+.sg-seoul-keys legend { padding:0; margin:0 0 7px; color:rgba(147,215,243,.6); font-size:11px }
+.sg-seoul-key { position:relative; display:grid; place-items:center; height:60px; cursor:pointer;
+  background:linear-gradient(#171b1a,#0e100f); border:1px solid #2b3130; border-radius:2px;
+  box-shadow:inset 0 1px 0 rgba(235,230,215,.07),inset 0 -2px 0 rgba(0,0,0,.6);
+  transition:background .08s,box-shadow .08s,border-color .08s }
+.sg-seoul-key:hover { border-color:rgba(147,215,243,.55) }
+.sg-seoul-key input { position:absolute; opacity:0; width:1px; height:1px; pointer-events:none }
+.sg-seoul-key img { width:40px; height:52px; image-rendering:crisp-edges; image-rendering:pixelated; pointer-events:none }
+.sg-seoul-key:has(input:checked) { background:#93d7f3; border-color:#cdeefa;
+  box-shadow:0 0 14px rgba(147,215,243,.55),inset 0 0 8px rgba(255,255,255,.5) }
+.sg-seoul-key:has(input:focus-visible) { outline:2px solid #93d7f3; outline-offset:2px }
+.sg-seoul-field { display:block }
+.sg-seoul-field textarea { display:block; width:100%; box-sizing:border-box; min-height:64px; resize:vertical;
+  margin:0; padding:9px 10px; background:#040404; color:#93d7f3; caret-color:#93d7f3;
+  border:1px solid #2b3130; border-radius:2px; font:inherit; font-size:13px; line-height:1.5 }
+.sg-seoul-field textarea::placeholder { color:rgba(147,215,243,.32) }
+.sg-seoul-field textarea:focus { outline:none; border-color:rgba(147,215,243,.7); box-shadow:0 0 12px rgba(72,153,159,.3) }
+.sg-seoul-row { display:flex; align-items:center; gap:12px; margin-top:9px }
+.sg-seoul-row button { flex:none; padding:8px 14px; cursor:pointer; color:#0a0807; background:#93d7f3;
+  border:1px solid #cdeefa; border-radius:2px; font:700 12px/1 inherit; font-family:inherit;
+  box-shadow:0 0 12px rgba(147,215,243,.35),inset 0 -2px 0 rgba(0,0,0,.25) }
+.sg-seoul-row button:hover { background:#b9e6f8 }
+.sg-seoul-row button:active { transform:translateY(1px); box-shadow:0 0 6px rgba(147,215,243,.35) }
+.sg-seoul-row button:disabled { opacity:.5; cursor:wait }
+.sg-seoul-row button:focus-visible { outline:2px solid #fff; outline-offset:2px }
+.sg-seoul-status { margin:0; min-width:0; color:rgba(147,215,243,.6); font-size:11px; line-height:1.4 }
+.sg-seoul-hp { position:absolute!important; left:-9999px; width:1px; height:1px; opacity:0 }
+.sg-seoul-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap }
+.sg-seoul-list { position:relative; z-index:1; list-style:none; margin:14px 0 0; padding:10px 0 0;
+  max-height:min(230px,28vh); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin;
+  scrollbar-color:#48999f transparent; border-top:1px dashed rgba(72,153,159,.4) }
+.sg-seoul-list li { display:grid; grid-template-columns:20px minmax(0,1fr); gap:12px; align-items:start;
+  padding:9px 2px; border-bottom:1px dotted rgba(235,230,215,.1) }
+.sg-seoul-list li img { width:20px; height:26px; image-rendering:crisp-edges; image-rendering:pixelated; margin-top:2px }
+.sg-seoul-list p { margin:0; color:#e9e6df; font-size:12.5px; line-height:1.55; overflow-wrap:anywhere }
+.sg-seoul-list time { display:block; margin-top:3px; color:rgba(147,215,243,.45); font-size:10.5px }
+.sg-seoul-list .sg-seoul-empty { display:block; color:rgba(233,230,223,.45); border:0 }
+@media (max-width:760px) {
+  .sg-seoul { padding:16px 12px 12px }
+  .sg-seoul-keys { grid-template-columns:repeat(4,minmax(0,1fr)) }
+  .sg-seoul-list { max-height:260px }
+}
+@media (prefers-reduced-motion: reduce) { .sg-seoul-q { animation:none } }
