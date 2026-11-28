@@ -1,0 +1,71 @@
+/* ROSES fragments: an interview line in Korean under the enlarged photograph, shown as an old CRT caption.
+   Variants on html: sg-frag-phosphor (default), sg-frag-teletext, sg-frag-off. */
+
+@font-face { font-family:"Galmuri11 Roses"; src:url("fonts/galmuri11-roses.woff2") format("woff2");
+  font-display:swap; }   /* Galmuri11 subset to the characters the fragments use, 10 KB */
+
+/* The overlay stacks photo then caption; the photo gives up the caption's height. */
+.photo-detail-overlay.has-frag { flex-direction:column }
+.photo-detail-overlay.has-frag .photo-detail-frame img {
+  max-height:calc(84vh - var(--frag-h,0px)); max-height:calc(84dvh - var(--frag-h,0px)) }
+@media (max-width:760px) {
+  .photo-detail-overlay.has-frag .photo-detail-frame img {
+    max-height:calc(80vh - var(--frag-h,0px)); max-height:calc(80dvh - var(--frag-h,0px)) }
+}
+
+.sg-frag { position:relative; margin:clamp(12px,2vh,20px) auto 0; padding:.45em 1.2em .5em;
+  width:max-content; max-width:min(34rem,88vw); text-align:center; color:#EBE6D7;
+  font:12px/1.6 "Galmuri11 Roses","Galmuri11",ui-monospace,monospace; letter-spacing:.02em;
+  word-break:keep-all; overflow-wrap:break-word; text-wrap:balance;
+  -webkit-font-smoothing:none; font-smooth:never;
+  pointer-events:none; overflow:hidden; isolation:isolate; transform-origin:50% 50%;
+  background:radial-gradient(ellipse at 50% 50%,rgba(10,8,7,.78) 30%,rgba(10,8,7,0) 72%) }
+.sg-frag[hidden] { display:none }
+@media (max-width:760px) { .sg-frag { max-width:90vw; padding:.4em .7em .45em } }
+
+/* ---------------------------------------------------------------- phosphor (default) */
+/* Misregistration runs the site's one way: red left, cyan right. Static shadows, never animated. */
+html.sg-frag-phosphor .sg-frag > span {
+  text-shadow:-1px 0 rgba(233,57,62,.6), 1px 0 rgba(147,215,243,.6), 0 0 8px rgba(147,215,243,.25) }
+/* Scanlines over the caption only, plus a faint hum bar rolling down through it. */
+html.sg-frag-phosphor .sg-frag::after { content:""; position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:repeating-linear-gradient(to bottom,rgba(10,8,7,0) 0 2px,rgba(10,8,7,.3) 2px 3px) }
+html.sg-frag-phosphor .sg-frag::before { content:""; position:absolute; left:0; right:0; top:-60%; height:60%;
+  z-index:1; pointer-events:none; opacity:0;
+  background:linear-gradient(to bottom,rgba(235,230,215,0),rgba(235,230,215,.09) 50%,rgba(235,230,215,0)) }
+html.sg-frag-phosphor .sg-frag.is-on::before { animation:sg-frag-hum 6.5s linear 1.2s infinite }
+@keyframes sg-frag-hum { 0% { opacity:1; transform:translate3d(0,0,0) }
+  100% { opacity:1; transform:translate3d(0,270%,0) } }
+
+/* Power-on: a bright line opens into the caption after the photo has projected in.
+   Only transform, opacity and a short filter on a small box. */
+html.sg-frag-phosphor .sg-frag { opacity:0 }
+html.sg-frag-phosphor .sg-frag.is-on { animation:sg-frag-on .36s cubic-bezier(.2,.7,.2,1) both }
+html.sg-frag-phosphor .sg-frag.is-on > span { display:inline-block;
+  animation:sg-frag-flicker 9s steps(1,end) 2.4s infinite }
+@keyframes sg-frag-on {
+  0% { opacity:1; transform:scale(.55,.03); filter:brightness(3.2) }
+  34% { transform:scale(1.02,.04); filter:brightness(2.4) }
+  58% { transform:scale(1,1.06); filter:brightness(1.5) }
+  76% { transform:scale(1,.98); opacity:.82 }
+  100% { opacity:1; transform:none; filter:none } }
+/* Two single-frame dips in nine seconds: an old set catching, not a strobe. */
+@keyframes sg-frag-flicker { 0%,100% { opacity:1 } 41% { opacity:.62 } 41.4% { opacity:1 }
+  77% { opacity:.8; transform:translate3d(1px,0,0) } 77.3% { opacity:1; transform:none } }
+/* An optional off-beat slip, added by JS for one frame when the song is loud. */
+html.sg-frag-phosphor .sg-frag.sg-blip > span { transform:translate3d(-2px,0,0); opacity:.7 }
+
+/* ---------------------------------------------------------------- teletext */
+/* Broadcast subtitle: a black box behind each line, flat white, appears whole. */
+html.sg-frag-teletext .sg-frag { padding:0; overflow:visible; background:none; opacity:0 }
+html.sg-frag-teletext .sg-frag > span { background:#000; color:#fff; padding:.1em .4em;
+  -webkit-box-decoration-break:clone; box-decoration-break:clone }
+html.sg-frag-teletext .sg-frag.is-on { opacity:1 }
+
+/* ---------------------------------------------------------------- off */
+html.sg-frag-off .sg-frag { display:none }
+
+@media (prefers-reduced-motion: reduce) {
+  .sg-frag, .sg-frag *, .sg-frag::before { animation:none!important }
+  html.sg-frag-phosphor .sg-frag.is-on { opacity:1; transition:opacity .2s ease }
+}
