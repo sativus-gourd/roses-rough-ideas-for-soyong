@@ -1788,14 +1788,15 @@ void main(){
   modules.push(Rose);
 
   /* ============================================================== 13. the photograph as a television */
-  // An open photograph is a set left on. Static breaks over it every few seconds, at random. Leave it
-  // alone long enough and one burst does not clear: the picture comes back as one of Soyong's colour
-  // treatments. Clicking the picture then is hitting the set: it jolts, the projector transition
-  // runs again and the untreated photograph steadies. A click on a clean picture still closes it.
+  // An open photograph is a set left on. Every few seconds, at random, the signal hiccups in the same
+  // language as the open transition: a violet and cyan split, a few displaced slices, faint scanlines,
+  // a touch of brightness. Leave it alone long enough and one hiccup does not clear: the picture comes
+  // back as one of Soyong's colour edits. Clicking the picture then is hitting the set: a small jolt,
+  // the open transition runs again and the untreated photograph steadies. A click on a clean picture
+  // still closes it.
   const TV = (() => {
-    let wrap = null, fx = null, fxImg = null, cv = null, ctx = null, img = null;
-    let open = false, state = 'clean', idleSince = 0, decayAfter = 0, nextBurstAt = 0;
-    let burst = null, lastDraw = 0, jitterOn = false;
+    let wrap = null, fx = null, fxImg = null, split = [], slices = [], scan = null, img = null;
+    let open = false, state = 'clean', idleSince = 0, decayAfter = 0, nextAt = 0, hic = null;
     const cache = {};
     function treatment(n) {
       // Read Soyong's treatment n from her own stylesheet through a hidden stand-in tile.
@@ -1805,12 +1806,12 @@ void main(){
       t.setAttribute('aria-hidden', 'true');
       t.style.cssText = 'position:fixed;left:-9999px;top:0;width:8px;height:8px;visibility:hidden;pointer-events:none';
       const l = make('div', 'photo-filter-layer', t);
-      const cs = getComputedStyle(t), b = getComputedStyle(l, '::before'), a = getComputedStyle(l, '::after');
+      const cs = getComputedStyle(t), bf = getComputedStyle(l, '::before'), af = getComputedStyle(l, '::after');
       const o = {
         '--tv-filter': cs.getPropertyValue('--fx-filter').trim() || 'none',
-        '--tv-bimg': b.backgroundImage, '--tv-bsize': b.backgroundSize, '--tv-brepeat': b.backgroundRepeat,
-        '--tv-bblend': b.backgroundBlendMode, '--tv-b1': b.mixBlendMode, '--tv-bop': b.opacity,
-        '--tv-acol': a.backgroundColor, '--tv-b2': a.mixBlendMode, '--tv-aop': a.opacity,
+        '--tv-bimg': bf.backgroundImage, '--tv-bsize': bf.backgroundSize, '--tv-brepeat': bf.backgroundRepeat,
+        '--tv-bblend': bf.backgroundBlendMode, '--tv-b1': bf.mixBlendMode, '--tv-bop': bf.opacity,
+        '--tv-acol': af.backgroundColor, '--tv-b2': af.mixBlendMode, '--tv-aop': af.opacity,
       };
       t.remove();
       return (cache[n] = o);
@@ -1821,107 +1822,101 @@ void main(){
       wrap.setAttribute('aria-hidden', 'true');
       fx = make('div', 'sg-tv-fx', wrap);
       fxImg = make('img', '', fx); fxImg.alt = '';
-      cv = make('canvas', 'sg-tv-static', wrap);
-      ctx = cv.getContext('2d');
+      split = [make('div', 'sg-tv-split v', wrap), make('div', 'sg-tv-split c', wrap)];
+      slices = [0, 1, 2].map(() => make('div', 'sg-tv-slice', wrap));
+      scan = make('div', 'sg-tv-scan', wrap);
       img = R.detailImg;
       R.detailFrame.addEventListener('click', e => {
         if (!open || reduced() || !allowed('tv')) return;
-        if (state === 'degraded' || burst) { e.stopPropagation(); hit(); }
+        if (state === 'degraded' || hic) { e.stopPropagation(); hit(); }
       });
     }
     function schedule(now, first) {
-      nextBurstAt = now + (state === 'clean' ? (first ? rand(2400, 4600) : rand(1800, 5600)) : rand(3500, 9000));
+      nextAt = now + (state === 'clean' ? (first ? rand(2600, 4800) : rand(2400, 6200)) : rand(4000, 9000));
+    }
+    function reset() {
+      if (!wrap) return;
+      for (const el of [...split, ...slices, scan]) el.style.opacity = '0';
+      if (img) { img.style.filter = ''; img.style.transform = ''; }
+      fx.style.transform = '';
     }
     function onOpen() {
       if (!allowed('tv')) return;
       build();
-      open = true; state = 'clean'; burst = null;
+      open = true; state = 'clean'; hic = null;
       fx.classList.remove('on');
+      reset();
+      const src = img.currentSrc || img.src;
+      wrap.style.setProperty('--tv-src', `url("${src}")`);
       const now = performance.now();
-      idleSince = now; decayAfter = rand(7500, 12500); schedule(now, true);
+      idleSince = now; decayAfter = rand(8000, 13000); schedule(now, true);
     }
     function onClose() {
-      open = false; burst = null;
+      open = false; hic = null;
       if (!wrap) return;
-      fx.classList.remove('on'); cv.style.opacity = '0';
-      if (img) img.style.transform = '';
+      fx.classList.remove('on');
+      reset();
       R.detailFrame.classList.remove('sg-thump');
     }
-    function startBurst(now, kind) {
-      const dur = kind === 'take' ? 1150 : kind === 'hit' ? 300 : rand(110, 420) * (state === 'degraded' ? .8 : 1);
-      burst = { kind, t0: now, dur, level: kind === 'burst' ? rand(.35, .75) : 1, switched: false };
-      const w = Math.max(64, Math.round((R.detailFrame.offsetWidth || 600) / 3));
-      const h = Math.max(48, Math.round((R.detailFrame.offsetHeight || 400) / 3));
-      if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    function start(now, kind) {
+      const take = kind === 'take';
+      hic = { kind, t0: now, dur: take ? rand(620, 760) : rand(140, 280), k: take ? 1 : rand(.45, .8), switched: false,
+        dir: chance(.5) ? 1 : -1, bands: slices.map(() => { const top = rand(4, 86); return { top, h: rand(2.5, take ? 11 : 7), dx: rand(6, take ? 26 : 16) * (chance(.5) ? 1 : -1) }; }) };
+      const src = img.currentSrc || img.src;
+      wrap.style.setProperty('--tv-src', `url("${src}")`);
     }
     function hit() {
       const now = performance.now();
       R.detailFrame.classList.remove('sg-thump'); void R.detailFrame.offsetWidth; R.detailFrame.classList.add('sg-thump');
-      later(320, () => R.detailFrame && R.detailFrame.classList.remove('sg-thump'));
-      startBurst(now, 'hit');
-      later(130, () => {
-        if (!open) return;
-        fx.classList.remove('on');
-        state = 'clean';
-        Detail.replay();
-      });
-      idleSince = now; decayAfter = rand(7500, 12500); schedule(now + 300, false);
-    }
-    function drawStatic(level, roll) {
-      const w = cv.width, h = cv.height, im = ctx.createImageData(w, h), d = im.data;
-      const tearRow = Math.random() < .7 ? Math.floor(Math.random() * h) : -1;
-      for (let y = 0; y < h; y++) {
-        const bar = Math.abs(((y / h) - roll + 1) % 1 - .5) < .08 ? 1.5 : 1;
-        const lineGain = .65 + Math.random() * .55;
-        const tear = Math.abs(y - tearRow) < 3;
-        for (let x = 0; x < w; x++) {
-          const p = (y * w + x) * 4;
-          let n = Math.pow(Math.random(), 1.6) * 255 * lineGain * bar;
-          if (tear) n = n * .4 + 150;
-          d[p] = n * .94; d[p + 1] = n * .98; d[p + 2] = n; d[p + 3] = 255 * clamp(level * (.75 + Math.random() * .25), 0, 1);
-        }
-      }
-      ctx.putImageData(im, 0, 0);
+      later(260, () => R.detailFrame && R.detailFrame.classList.remove('sg-thump'));
+      hic = null; reset();
+      fx.classList.remove('on');
+      state = 'clean';
+      Detail.replay();
+      idleSince = now; decayAfter = rand(8000, 13000); schedule(now + 600, false);
     }
     function update(now) {
       if (!open || !wrap) return;
-      if (reduced() || !allowed('tv')) { cv.style.opacity = '0'; return; }
-      if (!burst && now >= nextBurstAt) {
-        if (state === 'clean' && now - idleSince > decayAfter) startBurst(now, 'take');
-        else startBurst(now, 'burst');
-        schedule(now + (burst ? burst.dur : 0), false);
+      if (reduced() || !allowed('tv')) { reset(); return; }
+      if (!hic && now >= nextAt) {
+        start(now, state === 'clean' && now - idleSince > decayAfter ? 'take' : 'hiccup');
+        schedule(now + hic.dur, false);
       }
-      if (!burst) {
-        if (jitterOn) { img.style.transform = ''; jitterOn = false; }
-        cv.style.opacity = '0';
-        return;
+      if (!hic) return;
+      const t = (now - hic.t0) / hic.dur;
+      if (t >= 1) { hic = null; reset(); return; }
+      // envelope: quick attack, a stutter, an even release
+      let env = t < .15 ? t / .15 : t > .6 ? (1 - t) / .4 : 1;
+      if (Math.random() < .18) env *= .45;
+      env *= hic.k;
+      if (hic.kind === 'take' && !hic.switched && t > .42) {
+        hic.switched = true;
+        const o = treatment(1 + Math.floor(Math.random() * 10));
+        for (const k in o) fx.style.setProperty(k, o[k]);
+        fxImg.src = img.currentSrc || img.src;
+        fx.classList.add('on');
+        state = 'degraded';
       }
-      const t = (now - burst.t0) / burst.dur;
-      if (t >= 1) {
-        burst = null; cv.style.opacity = '0'; img.style.transform = ''; jitterOn = false;
-        return;
-      }
-      // envelope: fast attack, a flicker, a ragged release
-      let level = burst.level * (t < .12 ? t / .12 : t > .7 ? (1 - t) / .3 : 1) * (Math.random() < .15 ? .55 : 1);
-      if (burst.kind === 'take') {
-        level = t < .55 ? Math.min(1, t / .25) : (1 - t) / .45;
-        if (!burst.switched && t > .5) {
-          burst.switched = true;
-          const o = treatment(1 + Math.floor(Math.random() * 10));
-          for (const k in o) fx.style.setProperty(k, o[k]);
-          fxImg.src = img.currentSrc || img.src;
-          fx.classList.add('on');
-          state = 'degraded';
-        }
-      }
-      if (now - lastDraw > 33) { lastDraw = now; drawStatic(level, (now / 900) % 1); }
-      cv.style.opacity = '1';
-      const j = level * 6;
-      img.style.transform = `translate3d(${(Math.random() * 2 - 1) * j}px,0,0)`;
+      const off = 2 + env * 5;
+      split[0].style.opacity = (env * .3).toFixed(3);
+      split[0].style.transform = `translate3d(${(-off).toFixed(1)}px,0,0)`;
+      split[1].style.opacity = (env * .3).toFixed(3);
+      split[1].style.transform = `translate3d(${off.toFixed(1)}px,0,0)`;
+      hic.bands.forEach((band, i) => {
+        const el = slices[i];
+        const on = env > .2 && (i === 0 || t > .2 * i);
+        el.style.opacity = on ? '1' : '0';
+        el.style.setProperty('--t', band.top + '%');
+        el.style.setProperty('--b', Math.max(0, 100 - band.top - band.h) + '%');
+        el.style.transform = `translate3d(${(band.dx * env * (Math.random() < .3 ? -.5 : 1)).toFixed(1)}px,0,0)`;
+      });
+      scan.style.opacity = (env * .45).toFixed(3);
+      img.style.filter = `brightness(${(1 + env * .1).toFixed(3)})`;
+      const jx = (hic.dir * env * 2).toFixed(1);
+      img.style.transform = `translate3d(${jx}px,0,0)`;
       fx.style.transform = img.style.transform;
-      jitterOn = true;
     }
-    return { name: 'tv', update, onOpen, onClose };
+    return { name: 'tv', update, onOpen, onClose, test: k => { if (open) start(performance.now(), k || 'hiccup'); } };
   })();
   modules.push(TV);
 
@@ -2147,5 +2142,5 @@ void main(){
   window.SGCyber = { version: '1.0', settings: S, set: Lab.set, burn: t => Burns.fire(t || 'band'),
     hologram: () => Holo.spawn(), holograms: () => Holo.list.map(h => ({ src: h.src, state: h.state, locked: h.locked, sx: h.sx, sy: h.sy, w: h.w, h: h.h })),
     pointer: ptr, lock: () => Lock.debug(), staticMask: () => Static.debugMask(), staticCanvas: () => Static.canvas(),
-    staticTune: o => Static.tune(o), staticSurge: () => Static.surge(), music, cost: () => ({ fps: fpsMeter.value, ms: fpsMeter.cost }) };
+    staticTune: o => Static.tune(o), staticSurge: () => Static.surge(), tv: k => TV.test(k), music, cost: () => ({ fps: fpsMeter.value, ms: fpsMeter.cost }) };
 })();
