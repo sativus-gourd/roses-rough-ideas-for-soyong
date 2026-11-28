@@ -11,7 +11,7 @@
   background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.28) 2px 3px) }
 .sg-seoul-q { margin:4px 0 18px; display:flex; flex-direction:column; gap:10px; text-align:center;
   color:#93d7f3; font-weight:700; filter:blur(.35px);
-  text-shadow:-1.5px 0 rgba(233,57,62,.55),0 0 8px rgba(147,215,243,.55),0 0 22px rgba(72,153,159,.45);
+  text-shadow:-1.5px 0 rgba(108,100,200,.6),0 0 8px rgba(147,215,243,.55),0 0 22px rgba(72,153,159,.45);
   animation:sg-seoul-flicker 7.3s steps(1) infinite }
 .sg-seoul-q [lang="ko"] { font:700 clamp(15px,1.25vw,18px)/1.35 'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
   letter-spacing:-.02em }

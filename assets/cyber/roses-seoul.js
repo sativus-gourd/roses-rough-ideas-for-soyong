@@ -22,25 +22,27 @@
     red: ['#ff6a60', '#e9393e', '#831c1f'], white: ['#ffffff', '#ebe6d7', '#b3ac9e'],
     pink: ['#f5b6c2', '#e08a9b', '#9c5b71'], peach: ['#fdbe8a', '#e59a60', '#9c5b4a'],
     dark: ['#831c1f', '#5a141a', '#2a0a0c'], yellow: ['#f0de6a', '#d7c02c', '#8a7a1a'],
+    blue: ['#a9c8f0', '#5a7fc4', '#2c3f7a'], lavender: ['#ddd2f7', '#a993dc', '#6a55a3'],
+    violet: ['#7d6cc0', '#3e2f6e', '#1a1233'], ice: ['#ecfcff', '#a9dbe6', '#5d9aa6'],
   };
   const GREEN = { stem: '#3f6b3b', leaf: '#5c8a48', dark: '#2e4f2c' };
   const BOUQUETS = [
-    { wrap: 'kraft', roses: ['red'], n: 5, ribbon: '#48999f', label: 'Red roses in kraft paper' },
-    { wrap: 'news', roses: ['white'], n: 5, ribbon: '#e9393e', label: 'White roses in newspaper' },
-    { wrap: 'black', roses: ['red', 'dark'], n: 6, ribbon: '#b3ac9e', label: 'Dark red roses in black paper' },
-    { wrap: 'cello', roses: ['pink'], n: 5, ribbon: '#e9393e', label: 'Pink roses in cellophane' },
+    { wrap: 'kraft', roses: ['blue'], n: 5, ribbon: '#48999f', label: 'Dyed blue roses in kraft paper' },
+    { wrap: 'news', roses: ['white'], n: 5, ribbon: '#343566', label: 'White roses in newspaper' },
+    { wrap: 'black', roses: ['violet', 'lavender'], n: 6, ribbon: '#b3ac9e', label: 'Dark violet roses in black paper' },
+    { wrap: 'cello', roses: ['lavender'], n: 5, ribbon: '#6c64c8', label: 'Lavender roses in cellophane' },
     { wrap: 'none', roses: ['red'], n: 1, single: true, label: 'A single red rose' },
-    { wrap: 'bag', roses: ['yellow'], n: 4, label: 'Yellow roses in a shop bag' },
-    { wrap: 'kraft', roses: ['peach'], n: 4, wilted: true, ribbon: '#831c1f', label: 'Wilting roses in kraft paper' },
-    { wrap: 'pink', roses: ['white', 'red'], n: 6, ribbon: '#ebe6d7', label: 'Red and white roses in pink paper' },
+    { wrap: 'bag', roses: ['ice'], n: 4, label: 'Pale roses in a shop bag' },
+    { wrap: 'kraft', roses: ['lavender'], n: 4, wilted: true, ribbon: '#343566', label: 'Wilting roses in kraft paper' },
+    { wrap: 'slate', roses: ['white', 'blue'], n: 6, ribbon: '#ebe6d7', label: 'White and blue roses in grey paper' },
   ];
   const WRAP = {
     kraft: { base: '#b98a5a', shade: '#8e6640', light: '#d6ab78', mark: '#6e4e30' },
     news: { base: '#d8d3c7', shade: '#a9a399', light: '#eeeae0', mark: '#3a3733' },
     black: { base: '#1e1b19', shade: '#0f0d0c', light: '#3a3733', mark: '#b3ac9e' },
     cello: { base: '#93d7f3', shade: '#48999f', light: '#ffffff', mark: '#ffffff', alpha: .38 },
-    pink: { base: '#e8a5b4', shade: '#b8788a', light: '#f7c9d3', mark: '#9c5b71' },
-    bag: { base: '#ebe6d7', shade: '#b3ac9e', light: '#ffffff', mark: '#e9393e' },
+    slate: { base: '#6f8796', shade: '#4b6a76', light: '#98bdce', mark: '#374e57' },
+    bag: { base: '#ebe6d7', shade: '#b3ac9e', light: '#ffffff', mark: '#48999f' },
   };
   const rng = seed => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
@@ -88,9 +90,9 @@
         const [ox, oy] = spots[i];
         const tone = b.roses[i % b.roses.length];
         const jx = Math.round(r() * 2 - 1), jy = Math.round(r() * 2 - 1) + (b.wilted ? Math.round(r() * 3) : 0);
-        head(cx + ox + jx, cy + oy + jy, b.wilted && i % 2 ? 'dark' : tone, false);
+        head(cx + ox + jx, cy + oy + jy, b.wilted && i % 2 ? 'violet' : tone, false);
       }
-      if (b.wilted) { px(3, 13, ROSE.peach[2]); px(17, 12, ROSE.dark[1]); }
+      if (b.wilted) { px(3, 13, ROSE.lavender[2]); px(17, 12, ROSE.violet[1]); }
       // the wrap
       if (b.wrap === 'bag') {
         for (let y = 10; y < 26; y++) {
@@ -114,7 +116,7 @@
             if (b.wrap === 'kraft' && r() < .12) col = W8.mark;
             if (b.wrap === 'news' && y % 2 === 0 && x > xl && x < xr && r() < .7) col = W8.mark;
             if (b.wrap === 'black' && x === xr) col = W8.mark;
-            if (b.wrap === 'pink' && (x - y) % 6 === 0) col = W8.mark;
+            if (b.wrap === 'slate' && (x - y) % 6 === 0) col = W8.mark;
             let a = W8.alpha || 1;
             if (b.wrap === 'cello' && (x + y) % 7 === 0) { col = W8.mark; a = .7; }
             px(x, y, col, a);

@@ -279,7 +279,7 @@ void main(){
   vec3 col=mix(vec3(v),vec3(r,v,b),uChroma);
   float fleck=step(1.-.035*uFleck,h12(p*1.31+seed+7.));
   float side=step(.5,h12(p+3.));
-  col=mix(col,vec3(.914,.224,.243)*1.5,fleck*side);
+  col=mix(col,vec3(.424,.392,.784)*1.5,fleck*side);
   col=mix(col,vec3(.576,.843,.953)*1.5,fleck*(1.-side));
   col*=mix(vec3(.9,.97,1.),vec3(1.,.93,.84),uWarm);
   col*=1.+inter*1.15;
@@ -1027,11 +1027,13 @@ void main(){
     const RAMPS = {
       mercury: [[8, 13, 13], [55, 78, 87], [75, 106, 118], [152, 189, 206], [255, 255, 255]],
       sodium: [[105, 51, 63], [138, 76, 99], [189, 120, 121], [224, 151, 109], [253, 170, 2]],
-      indigo: [[5, 11, 47], [54, 54, 103], [138, 100, 104], [170, 117, 104], [252, 129, 0]],
+      indigo: [[5, 11, 47], [25, 32, 88], [52, 53, 102], [94, 79, 140], [168, 170, 226], [226, 232, 255]],
+      teal: [[6, 18, 20], [22, 56, 60], [72, 153, 159], [89, 170, 160], [147, 215, 243], [230, 250, 250]],
       signal: [[10, 8, 7], [131, 28, 31], [233, 57, 62], [255, 214, 214]],
       cyan: [[11, 42, 51], [72, 153, 159], [147, 215, 243], [255, 255, 255]],
     };
-    const GRUNGE_RAMPS = [['mercury', .38], ['sodium', .24], ['indigo', .2], ['signal', .18]];
+    // Blue, teal and purple only. Red appears as a rare, short flash (see the 'ramp' glitch).
+    const GRUNGE_RAMPS = [['mercury', .4], ['teal', .32], ['indigo', .28]];
     const pickRamp = () => {
       let r = Math.random();
       for (const [k, w] of GRUNGE_RAMPS) { if ((r -= w) <= 0) return k; }
@@ -1253,7 +1255,7 @@ void main(){
           const kind = pick(['drop', 'drop', 'tear', 'tear', 'jump', 'ramp']);
           h.glitch = { kind, until: now + (kind === 'tear' ? rand(120, 380) : kind === 'ramp' ? rand(90, 260) : rand(40, 170)), dx: rand(-9, 9) };
           if (kind === 'tear') { const y0 = rand(0, .8); h.tear = { y0, y1: y0 + rand(.08, .3), dx: rand(-.14, .14) }; h.block = -1; }
-          if (kind === 'ramp') { h.rampWas = h.ramp; h.ramp = pick(Object.keys(RAMPS).filter(k => k !== h.ramp && k !== 'cyan')); h.block = -1; }
+          if (kind === 'ramp') { h.rampWas = h.ramp; h.ramp = chance(.04) ? 'signal' : pick(['mercury', 'teal', 'indigo'].filter(k => k !== h.ramp)); h.block = -1; }
           h.nextGlitchAt = now + (chance(.3) ? rand(150, 700) : -Math.log(1 - Math.random()) * 2600 + 400);
         }
         if (h.glitch && now > h.glitch.until) {
@@ -1397,7 +1399,7 @@ void main(){
         return e;
       });
       parts[1].style.background = hot ? COL.red : COL.cyanPale;
-      parts[2].style.background = hot ? COL.void : '#3A0C0F'; // oxblood at about 45%, so shadows stay dark
+      parts[2].style.background = hot ? COL.void : '#0C123A'; // INDIGO shadow, so the band stays blue
       const flick = [70, 45, hot ? 0 : 85];
       let i = 0;
       const step = () => {
@@ -1491,9 +1493,9 @@ void main(){
       const s = music.signal;
       if (s < .35) return chance(.15) ? 'scan' : 'tiles';
       const roll = Math.random();
-      if (roll < .32) return 'band';
-      if (roll < .46) return 'hot';
-      if (roll < .68) return 'vhold';
+      if (roll < .36) return 'band';
+      if (roll < .4) return 'hot';
+      if (roll < .66) return 'vhold';
       if (roll < .94) return 'tiles';
       return 'scan';
     }
@@ -1905,7 +1907,7 @@ void main(){
         level = t < .55 ? Math.min(1, t / .25) : (1 - t) / .45;
         if (!burst.switched && t > .5) {
           burst.switched = true;
-          const o = treatment(1 + Math.floor(Math.random() * 10));
+          const o = treatment(chance(.06) ? pick([3, 7, 9]) : pick([1, 2, 4, 5, 6, 8, 10]));
           for (const k in o) fx.style.setProperty(k, o[k]);
           fxImg.src = img.currentSrc || img.src;
           fx.classList.add('on');

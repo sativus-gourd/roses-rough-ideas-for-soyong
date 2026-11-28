@@ -8,7 +8,7 @@
    Misregistration runs one way across the whole site: red to the left, cyan to the right. */
 
 html.sg-cyber { --sg-void:#0A0807; --sg-flash:#FFFFFF; --sg-cyan-pale:#93D7F3; --sg-red:#E9393E;
-  --sg-oxblood:#831C1F; --sg-cyan:#48999F; --sg-bone:#EBE6D7; --sg-signal:0; --sg-cement:1 }
+  --sg-oxblood:#831C1F; --sg-cyan:#48999F; --sg-bone:#EBE6D7; --sg-violet:#6C64C8; --sg-signal:0; --sg-cement:1 }
 
 /* ------------------------------------------------------------------ opening: dead channel */
 html.sg-cyber .sg-static { position:fixed; left:0; top:0; width:100vw; height:100vh; z-index:41;
@@ -132,7 +132,7 @@ html.sg-cyber .sg-slice { position:absolute; left:0; right:0; overflow:hidden; b
   isolation:isolate }
 html.sg-cyber .sg-slice i { position:absolute; left:0; width:100%; background-repeat:no-repeat;
   background-blend-mode:multiply; mix-blend-mode:screen }
-html.sg-cyber .sg-slice i.r { background-color:var(--sg-red) }
+html.sg-cyber .sg-slice i.r { background-color:var(--sg-violet) }
 html.sg-cyber .sg-slice i.c { background-color:var(--sg-cyan-pale) }
 
 /* Scanner line for the "scan" burn. */
@@ -152,7 +152,7 @@ html.sg-cyber .sg-edge i { position:absolute; top:0; bottom:0; left:0; width:cal
 html.sg-cyber .sg-edge.l i { animation-direction:reverse }
 @keyframes sg-streak { from { transform:translate3d(0,0,0) } to { transform:translate3d(-240px,0,0) } }
 html.sg-cyber .sg-edge::after { content:""; position:absolute; top:0; bottom:0; width:2px; opacity:.7 }
-html.sg-cyber .sg-edge.l::after { left:0; background:var(--sg-red) }
+html.sg-cyber .sg-edge.l::after { left:0; background:var(--sg-violet) }
 html.sg-cyber .sg-edge.r::after { right:0; background:var(--sg-cyan-pale) }
 
 /* ------------------------------------------------------------------ photo: projection */
@@ -163,7 +163,7 @@ html.sg-cyber .sg-proj > * { position:absolute; inset:0 }
 html.sg-cyber .sg-proj-r,
 html.sg-cyber .sg-proj-c { background-image:var(--sg-src); background-size:100% 100%;
   background-repeat:no-repeat; background-blend-mode:multiply; mix-blend-mode:screen; opacity:0 }
-html.sg-cyber .sg-proj-r { background-color:var(--sg-red) }
+html.sg-cyber .sg-proj-r { background-color:var(--sg-violet) }
 html.sg-cyber .sg-proj-c { background-color:var(--sg-cyan-pale) }
 html.sg-cyber .sg-proj-s { background-image:var(--sg-src); background-size:100% 100%;
   background-repeat:no-repeat; clip-path:inset(var(--t,40%) 0 var(--b,40%) 0); opacity:0 }
@@ -269,7 +269,7 @@ html.sg-cyber .sg-rose.boot .sg-rose-tilt { animation:sg-rose-boot .62s linear b
 html.sg-cyber .sg-ghost { position:fixed; left:0; top:0; z-index:8999; width:10px; height:10px;
   border:1.5px solid; border-radius:50%; pointer-events:none; opacity:0; mix-blend-mode:screen;
   will-change:transform,opacity }
-html.sg-cyber .sg-ghost.r { border-color:var(--sg-red) }
+html.sg-cyber .sg-ghost.r { border-color:var(--sg-violet) }
 html.sg-cyber .sg-ghost.c { border-color:var(--sg-cyan-pale) }
 @media (hover:none),(pointer:coarse) { html.sg-cyber .sg-ghost { display:none } }
 
