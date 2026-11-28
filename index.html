@@ -1724,7 +1724,9 @@
     // of the essay is visible at the bottom of the viewport.
     window.addEventListener('wheel',e=>{
       if(!entered || photoDetailOpen || creditsOpen)return;
-      if(!experience.contains(e.target) && !essayOverlay.contains(e.target))return;
+      // Once the essay is opening, the collage underneath is inert, so wheel events land on the
+      // page itself: keep listening to them, or the reveal stalls after the first notch.
+      if(!essayOpen && !experience.contains(e.target) && !essayOverlay.contains(e.target))return;
       const scale=e.deltaMode===1 ? 16 : e.deltaMode===2 ? innerHeight : 1;
       const delta=e.deltaY*scale;
       if(!delta)return;
